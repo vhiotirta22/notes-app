@@ -1,95 +1,83 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useState } from "react";
+import { Box, Heading, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, FormControl, FormLabel, Input, Textarea } from "@chakra-ui/react";
+import NoteList from "../components/NoteList";
 
 export default function Home() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [createdAt, setCreatedAt] = useState(new Date().toISOString());
+  const [noteId, setNoteId] = useState(null); // Tambahkan state untuk menyimpan ID catatan yang diedit
+
+  // Fungsi untuk membuka modal dalam mode edit
+  const handleOpenEditModal = (note) => {
+    setTitle(note.title);
+    setBody(note.body);
+    setCreatedAt(note.createdAt);
+    setNoteId(note.id); // Simpan ID catatan yang ingin diedit
+    setIsOpen(true); // Buka modal
+  };
+
+  // Fungsi untuk menyimpan atau mengedit catatan
+  const handleSubmit = async () => {
+    try {
+      const method = noteId ? "PUT" : "POST";
+      const url = noteId ? `/api/notes?id=${noteId}` : "/api/notes";
+
+      await fetch(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title, body, createdAt }),
+      });
+
+      // Reset form setelah penyimpanan
+      setTitle("");
+      setBody("");
+      setCreatedAt(new Date().toISOString());
+      setIsOpen(false);
+      setNoteId(null); // Reset ID catatan
+    } catch (err) {
+      console.error(err);
+    }
+  };
+<Heading mb={5} textAlign="center">Aplikasi Catatan</Heading>
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <Box maxW="800px" mx="auto" p={5}>
+      <Heading mb={50} textAlign="center">Aplikasi Catatan</Heading>
+      <Button colorScheme="blue" mb={50} onClick={() => setIsOpen(true)}>
+        Tambah Catatan
+      </Button>
+      <NoteList onEdit={handleOpenEditModal} /> {/* Pass handleOpenEditModal to NoteList */}
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{noteId ? "Edit Catatan" : "Tambah Catatan"}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl mb={4}>
+              <FormLabel>Judul</FormLabel>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </FormControl>
+            <FormControl mb={4}>
+              <FormLabel>Isi</FormLabel>
+              <Textarea value={body} onChange={(e) => setBody(e.target.value)} />
+            </FormControl>
+            <FormControl mb={4}>
+              <FormLabel>Tanggal Pembuatan</FormLabel>
+              <Input type="datetime-local" value={createdAt} onChange={(e) => setCreatedAt(e.target.value)} />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={10} onClick={handleSubmit}>
+              Simpan
+            </Button>
+            <Button onClick={() => setIsOpen(false)}>Batal</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
   );
 }
